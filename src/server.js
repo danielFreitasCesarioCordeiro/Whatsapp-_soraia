@@ -3,12 +3,14 @@ import cors from 'cors';
 import { config } from './config/config.js';
 import { connectDatabase } from './config/database.js';
 import schedulerService from './services/schedulerService.js';
-import whatsappService from './services/whatsappService.js';
+import evolutionService from './services/evolutionService.js';
+import googleSheetsService from './services/googleSheetsService.js';
 
 // Import routes
 import userRoutes from './routes/userRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
+import googleSheetsRoutes from './routes/googleSheetsRoutes.js';
 
 const app = express();
 
@@ -26,7 +28,8 @@ app.get('/', (req, res) => {
     endpoints: {
       users: '/api/users',
       payments: '/api/payments',
-      notifications: '/api/notifications'
+      notifications: '/api/notifications',
+      googleSheets: '/api/sheets'
     }
   });
 });
@@ -37,7 +40,9 @@ app.get('/health', (req, res) => {
     status: 'ok',
     timestamp: new Date().toISOString(),
     database: 'connected',
-    whatsapp: whatsappService.isReady ? 'connected' : 'disconnected'
+    evolutionApi: evolutionService.isReady ? 'connected' : 'disconnected',
+    n8n: config.n8n.enabled ? 'enabled' : 'disabled',
+    googleSheets: googleSheetsService.isReady ? 'connected' : 'disconnected'
   });
 });
 
@@ -45,6 +50,7 @@ app.get('/health', (req, res) => {
 app.use('/api/users', userRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/sheets', googleSheetsRoutes);
 
 // 404 handler
 app.use((req, res) => {
@@ -84,12 +90,11 @@ const startServer = async () => {
     // Iniciar agendador de notificações
     schedulerService.start();
 
-    // Mensagem sobre WhatsApp
-    if (config.whatsapp.enabled) {
-      console.log('📱 WhatsApp habilitado - aguardando autenticação...\n');
-    } else {
-      console.log('⚠️  WhatsApp desabilitado - apenas notificações por email serão enviadas\n');
-    }
+    // Mensagem sobre Evolution API
+    console.log('📱 Evolution API:', evolutionService.isReady ? 'Conectada ✅' : 'Desconectada ⚠️');
+    console.log('🔄 n8n Integration:', config.n8n.enabled ? 'Habilitada ✅' : 'Desabilitada');
+    console.log('📊 Google Sheets:', googleSheetsService.isReady ? 'Conectado ✅' : 'Desconectado ⚠️');
+    console.log();
 
   } catch (error) {
     console.error('❌ Erro ao iniciar servidor:', error);

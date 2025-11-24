@@ -1,0 +1,151 @@
+{
+  "name": "Sistema de Notificações - Pagamentos",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 8 * * *" }]
+        }
+      },
+      "id": "cron-diario",
+      "name": "Agendamento Diário 8h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:3000/api/payments?status=PENDING",
+        "authentication": "none",
+        "options": {}
+      },
+      "id": "buscar-pagamentos",
+      "name": "Buscar Pagamentos Pendentes",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "fieldsToSplitOut": "data",
+        "options": {}
+      },
+      "id": "split-pagamentos",
+      "name": "Separar Pagamentos",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const hoje = new Date();\\nconst vencimento = new Date($input.item.json.dueDate);\\nconst diasAteVencimento = Math.ceil((vencimento - hoje) / (1000 * 60 * 60 * 24));\\n\\nreturn {\\n  ...($input.item.json),\\n  diasAteVencimento,\\n  deveLembrar: diasAteVencimento >= 0 && diasAteVencimento <= 3\\n};"
+      },
+      "id": "calcular-dias",
+      "name": "Calcular Dias até Vencimento",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.deveLembrar }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "deve-notificar",
+      "name": "Deve Notificar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.EVOLUTION_API_URL }}/message/sendText/{{ $env.EVOLUTION_INSTANCE_NAME }}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "=55{{ $json.user.phone }}"
+            },
+            {
+              "name": "text",
+              "value": "=💰 *Lembrete de Pagamento*\\n\\nOlá, *{{ $json.user.name }}*!\\n\\n📝 *Descrição:* {{ $json.description }}\\n💵 *Valor:* R$ {{ $json.amount.toFixed(2) }}\\n📅 *Vencimento:* {{ new Date($json.dueDate).toLocaleDateString('pt-BR') }}\\n\\n{{ $json.diasAteVencimento === 0 ? '⚠️ *Vence HOJE!*' : '📅 Faltam *' + $json.diasAteVencimento + ' dia(s)*' }}"
+            }
+          ]
+        },
+        "options": {
+          "headers": {
+            "entries": [
+              {
+                "name": "apikey",
+                "value": "={{ $env.EVOLUTION_API_KEY }}"
+              }
+            ]
+          }
+        }
+      },
+      "id": "enviar-whatsapp-pagamento",
+      "name": "Enviar WhatsApp Pagamento",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1250, 200]
+    },
+    {
+      "parameters": {
+        "authentication": "none",
+        "url": "=http://localhost:3000/api/payments/{{ $json._id }}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "lastNotificationDate",
+              "value": "={{ $now.toISOString() }}"
+            }
+          ]
+        },
+        "options": {
+          "headers": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "atualizar-notificacao",
+      "name": "Atualizar Data Notificação",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1450, 200]
+    }
+  ],
+  "connections": {
+    "Agendamento Diário 8h": {
+      "main": [[{ "node": "Buscar Pagamentos Pendentes", "type": "main", "index": 0 }]]
+    },
+    "Buscar Pagamentos Pendentes": {
+      "main": [[{ "node": "Separar Pagamentos", "type": "main", "index": 0 }]]
+    },
+    "Separar Pagamentos": {
+      "main": [[{ "node": "Calcular Dias até Vencimento", "type": "main", "index": 0 }]]
+    },
+    "Calcular Dias até Vencimento": {
+      "main": [[{ "node": "Deve Notificar?", "type": "main", "index": 0 }]]
+    },
+    "Deve Notificar?": {
+      "main": [[{ "node": "Enviar WhatsApp Pagamento", "type": "main", "index": 0 }]]
+    },
+    "Enviar WhatsApp Pagamento": {
+      "main": [[{ "node": "Atualizar Data Notificação", "type": "main", "index": 0 }]]
+    }
+  },
+  "pinData": {}
+}

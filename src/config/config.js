@@ -16,8 +16,23 @@ export const config = {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
   },
-  whatsapp: {
-    enabled: process.env.WHATSAPP_ENABLED === 'true'
+  evolution: {
+    apiUrl: process.env.EVOLUTION_API_URL || 'http://localhost:8080',
+    apiKey: process.env.EVOLUTION_API_KEY,
+    instanceName: process.env.EVOLUTION_INSTANCE_NAME || 'notificacoes'
+  },
+  n8n: {
+    webhookUrl: process.env.N8N_WEBHOOK_URL,
+    enabled: process.env.N8N_ENABLED === 'true'
+  },
+  googleSheets: {
+    enabled: process.env.GOOGLE_SHEETS_ENABLED === 'true',
+    spreadsheetId: process.env.GOOGLE_SHEETS_ID,
+    serviceAccountEmail: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+    privateKey: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    usersTab: process.env.GOOGLE_SHEETS_USERS_TAB || 'Usuarios',
+    paymentsTab: process.env.GOOGLE_SHEETS_PAYMENTS_TAB || 'Pagamentos',
+    syncSchedule: process.env.GOOGLE_SHEETS_SYNC_SCHEDULE || '*/10 * * * *'
   },
   notifications: {
     schedule: process.env.NOTIFICATION_SCHEDULE || '0 8 * * *',

@@ -1,5 +1,6 @@
 import cron from 'node-cron';
 import notificationService from './notificationService.js';
+import googleSheetsService from './googleSheetsService.js';
 import { config } from '../config/config.js';
 
 class SchedulerService {
@@ -24,6 +25,17 @@ class SchedulerService {
     });
 
     this.jobs.push(mainJob, overdueJob);
+
+    // Agenda sincronização do Google Sheets (se habilitado)
+    if (config.googleSheets.enabled) {
+      console.log(`📊 Google Sheets: sincronização agendada (${config.googleSheets.syncSchedule})`);
+      
+      const sheetsJob = cron.schedule(config.googleSheets.syncSchedule, async () => {
+        await googleSheetsService.syncAll();
+      });
+      
+      this.jobs.push(sheetsJob);
+    }
 
     console.log('✅ Agendador iniciado com sucesso!');
     console.log('📌 As notificações serão enviadas automaticamente nos horários programados.\n');
@@ -50,6 +62,12 @@ class SchedulerService {
   async runManualCheck() {
     console.log('🔧 Executando verificação manual...');
     return await notificationService.runAllChecks();
+  }
+
+  // Método para sincronizar Google Sheets manualmente
+  async runManualSync() {
+    console.log('🔧 Executando sincronização manual do Google Sheets...');
+    return await googleSheetsService.syncAll();
   }
 }
 

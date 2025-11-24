@@ -1,0 +1,124 @@
+{
+  "name": "Sistema de Notificações - Aniversários",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "verificar-aniversarios",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-aniversarios",
+      "name": "Webhook - Verificar Aniversários",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:3000/api/users/birthdays/month/={{ $now.format('M') }}",
+        "authentication": "none",
+        "options": {}
+      },
+      "id": "buscar-aniversariantes",
+      "name": "Buscar Aniversariantes do Mês",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.count }}",
+              "operation": "larger",
+              "value2": 0
+            }
+          ]
+        }
+      },
+      "id": "tem-aniversariantes",
+      "name": "Tem Aniversariantes?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "fieldsToSplitOut": "data",
+        "options": {}
+      },
+      "id": "split-usuarios",
+      "name": "Separar Usuários",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [850, 200]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.EVOLUTION_API_URL }}/message/sendText/{{ $env.EVOLUTION_INSTANCE_NAME }}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "=55{{ $json.phone }}"
+            },
+            {
+              "name": "text",
+              "value": "=🎉🎂 *Feliz Aniversário, {{ $json.name }}!* 🎂🎉\\n\\nQue este dia seja repleto de alegrias e realizações!\\n\\n🎈🎁🎊"
+            }
+          ]
+        },
+        "options": {
+          "headers": {
+            "entries": [
+              {
+                "name": "apikey",
+                "value": "={{ $env.EVOLUTION_API_KEY }}"
+              }
+            ]
+          }
+        }
+      },
+      "id": "enviar-whatsapp",
+      "name": "Enviar WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1050, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"message\": \"Notificações enviadas\", \"count\": $json.count } }}"
+      },
+      "id": "response",
+      "name": "Resposta",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1250, 300]
+    }
+  ],
+  "connections": {
+    "Webhook - Verificar Aniversários": {
+      "main": [[{ "node": "Buscar Aniversariantes do Mês", "type": "main", "index": 0 }]]
+    },
+    "Buscar Aniversariantes do Mês": {
+      "main": [[{ "node": "Tem Aniversariantes?", "type": "main", "index": 0 }]]
+    },
+    "Tem Aniversariantes?": {
+      "main": [
+        [{ "node": "Separar Usuários", "type": "main", "index": 0 }],
+        [{ "node": "Resposta", "type": "main", "index": 0 }]
+      ]
+    },
+    "Separar Usuários": {
+      "main": [[{ "node": "Enviar WhatsApp", "type": "main", "index": 0 }]]
+    },
+    "Enviar WhatsApp": {
+      "main": [[{ "node": "Resposta", "type": "main", "index": 0 }]]
+    }
+  },
+  "pinData": {}
+}

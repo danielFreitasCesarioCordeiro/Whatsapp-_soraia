@@ -1,8 +1,9 @@
 import User from '../models/User.js';
 import Payment from '../models/Payment.js';
 import emailService from './emailService.js';
-import whatsappService from './whatsappService.js';
+import evolutionService from './evolutionService.js';
 import { config } from '../config/config.js';
+import axios from 'axios';
 
 class NotificationService {
   async checkAndSendBirthdayNotifications() {
@@ -56,8 +57,20 @@ class NotificationService {
     }
 
     // Envia WhatsApp se habilitado
-    if (user.notificationPreferences.whatsapp && config.whatsapp.enabled) {
-      results.whatsapp = await whatsappService.sendBirthdayNotification(user);
+    if (user.notificationPreferences.whatsapp) {
+      results.whatsapp = await evolutionService.sendBirthdayNotification(user);
+    }
+    
+    // Envia para n8n webhook se habilitado
+    if (config.n8n.enabled) {
+      await this.sendToN8nWebhook({
+        type: 'birthday',
+        user: {
+          name: user.name,
+          email: user.email,
+          phone: user.phone
+        }
+      });
     }
 
     return results;
@@ -135,11 +148,42 @@ class NotificationService {
     }
 
     // Envia WhatsApp se habilitado
-    if (user.notificationPreferences.whatsapp && config.whatsapp.enabled) {
-      results.whatsapp = await whatsappService.sendPaymentNotification(user, payment, daysUntilDue);
+    if (user.notificationPreferences.whatsapp) {
+      results.whatsapp = await evolutionService.sendPaymentNotification(user, payment, daysUntilDue);
+    }
+    
+    // Envia para n8n webhook se habilitado
+    if (config.n8n.enabled) {
+      await this.sendToN8nWebhook({
+        type: 'payment',
+        user: {
+          name: user.name,
+          email: user.email,
+          phone: user.phone
+        },
+        payment: {
+          description: payment.description,
+          amount: payment.amount,
+          dueDate: payment.dueDate,
+          daysUntilDue: daysUntilDue
+        }
+      });
     }
 
     return results;
+  }
+
+  async sendToN8nWebhook(data) {
+    try {
+      await axios.post(config.n8n.webhookUrl, data, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      console.log('✅ Dados enviados para n8n webhook');
+    } catch (error) {
+      console.error('❌ Erro ao enviar para n8n webhook:', error.message);
+    }
   }
 
   async checkAndUpdateOverduePayments() {
