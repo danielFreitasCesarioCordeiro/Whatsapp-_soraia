@@ -121,24 +121,28 @@ Você vai precisar de:
 
 ### **3.1 Obter ID da Planilha**
 
-Na URL da sua planilha:
-```
-https://docs.google.com/spreadsheets/d/1ABC123xyz-456/edit
-                                      ↑
-                                    Este é o ID
-```
+✅ **Sua planilha já está identificada!**
 
-Copie o ID (parte entre `/d/` e `/edit`)
+URL: `https://docs.google.com/spreadsheets/d/1AF2fOvs7JnNbY09XqFGSAjE27AtFwg91muNScmGSBXg/edit`
 
-### **3.2 Compartilhar com Service Account**
+**ID da Planilha:** `1AF2fOvs7JnNbY09XqFGSAjE27AtFwg91muNScmGSBXg`
 
-1. Na planilha, clique em **"Compartilhar"**
-2. Cole o email da service account:
-   - `sistema-notificacoes@seu-projeto.iam.gserviceaccount.com`
-3. Permissão: **Leitor**
-4. Clique em **"Enviar"**
+Este ID já está configurado no `.env` abaixo!
 
-✅ Agora o sistema pode ler sua planilha!
+### **3.2 Compartilhar com Service Account** ⚠️ **IMPORTANTE!**
+
+1. Abra sua planilha: https://docs.google.com/spreadsheets/d/1AF2fOvs7JnNbY09XqFGSAjE27AtFwg91muNScmGSBXg/edit
+2. Clique no botão **"Compartilhar"** (canto superior direito)
+3. Cole o email da service account que você criou no Google Cloud:
+   - Exemplo: `sistema-notificacoes@seu-projeto.iam.gserviceaccount.com`
+   - (Este email está no arquivo JSON que você baixou)
+4. Permissão: **Leitor** ou **Editor**
+5. **DESMARQUE** a opção "Notificar pessoas"
+6. Clique em **"Compartilhar"** ou **"Enviar"**
+
+✅ **Agora o sistema pode ler sua planilha!**
+
+⚠️ **SEM ESTE PASSO, A INTEGRAÇÃO NÃO FUNCIONARÁ!**
 
 ---
 
@@ -160,9 +164,9 @@ EVOLUTION_API_URL=http://localhost:8080
 EVOLUTION_API_KEY=sua-chave
 EVOLUTION_INSTANCE_NAME=notificacoes
 
-# Google Sheets - NOVO!
+# Google Sheets - CONFIGURAR SUA PLANILHA!
 GOOGLE_SHEETS_ENABLED=true
-GOOGLE_SHEETS_ID=1ABC123xyz-456
+GOOGLE_SHEETS_ID=1AF2fOvs7JnNbY09XqFGSAjE27AtFwg91muNScmGSBXg
 GOOGLE_SERVICE_ACCOUNT_EMAIL=sistema-notificacoes@seu-projeto.iam.gserviceaccount.com
 GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nSUA_CHAVE_PRIVADA_AQUI\n-----END PRIVATE KEY-----\n"
 
